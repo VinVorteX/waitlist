@@ -76,7 +76,7 @@ def get_db():
     finally:
         db.close()
 
-@app.post("/join", response_model=WaitlistResponse)
+@app.post("/", response_model=WaitlistResponse)
 def join_waitlist(request: WaitlistRequest):
     db = get_db()
     try:
