@@ -11,25 +11,20 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# Load environment variables
 load_dotenv()
 
-# Initialize FastAPI
 app = FastAPI(title="Simple Waitlist API")
 
-# Email Configuration
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 
 def send_confirmation_email(to_email: str, position: int):
     try:
-        # Create message
         msg = MIMEMultipart()
         msg['From'] = GMAIL_USER
         msg['To'] = to_email
         msg['Subject'] = "Welcome to our Waitlist!"
 
-        # Email body
         body = f"""
         Thank you for joining our waitlist!
         
@@ -42,7 +37,6 @@ def send_confirmation_email(to_email: str, position: int):
         """
         msg.attach(MIMEText(body, 'plain'))
 
-        # Send email
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
@@ -53,13 +47,11 @@ def send_confirmation_email(to_email: str, position: int):
         print(f"Failed to send email: {str(e)}")
         return False
 
-# Database setup
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
-# Models
 class WaitlistEntry(Base):
     __tablename__ = "waitlist"
     
@@ -67,10 +59,8 @@ class WaitlistEntry(Base):
     email = Column(String, unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# Create tables
 Base.metadata.create_all(bind=engine)
 
-# Request/Response models
 class WaitlistRequest(BaseModel):
     email: EmailStr
 
@@ -79,7 +69,6 @@ class WaitlistResponse(BaseModel):
     position: int
     email_sent: bool
 
-# Helper function
 def get_db():
     db = SessionLocal()
     try:
@@ -87,20 +76,16 @@ def get_db():
     finally:
         db.close()
 
-# Endpoints
 @app.post("/join", response_model=WaitlistResponse)
 def join_waitlist(request: WaitlistRequest):
     db = get_db()
     try:
-        # Create new entry
         entry = WaitlistEntry(email=request.email)
         db.add(entry)
         db.commit()
         
-        # Get position
         position = db.query(WaitlistEntry).count()
         
-        # Send confirmation email
         email_sent = send_confirmation_email(request.email, position)
         
         return WaitlistResponse(
